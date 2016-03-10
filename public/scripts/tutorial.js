@@ -5,20 +5,27 @@ var data = [
 
 
 var CommentBox = React.createClass({
+  handleSuccess: function(response) {
+    this.setState({data: response.data})
+  },
+  handleError: function(response) {
+    if (response instanceof Error) {
+      // Something happened in setting up the request that triggered an Error
+      console.log('Error', response.message);
+    } else {
+      // The request was made, but the server didn't respond with 2xx
+      console.error(this.props.url, response);
+    }
+  },
   loadCommentsFromServer: function() {
     axios.get(this.props.url)
-      .then(function(response) {
-        this.setState({data: response.data});
-      }.bind(this))
-      .catch(function(response) {
-        if (response instanceof Error) {
-          // Something happened in setting up the request that triggered an Error
-          console.log('Error', response.message);
-        } else {
-          // The request was made, but the server didn't respond with 2xx
-          console.error(this.props.url, response);
-        }
-      }.bind(this))
+      .then(this.handleSuccess)
+      .catch(this.handleError);
+  },
+  handleCommentSubmit: function(comment) {
+    axios.post(this.props.url, comment)
+      .then(this.handleSuccess)
+      .catch(this.handleError);
   },
   getInitialState: function() {
     return {data: []}
@@ -32,7 +39,7 @@ var CommentBox = React.createClass({
       <div className="commentBox">
         <h1>Comments</h1>
         <CommentList data={this.state.data} />
-        <CommentForm />
+        <CommentForm onCommentSubmit={this.handleCommentSubmit} />
       </div>
     )
   }
@@ -73,11 +80,44 @@ var Comment = React.createClass({
 
 
 var CommentForm = React.createClass({
+  getInitialState: function() {
+    return {
+      author: '',
+      text: ''
+    }
+  },
+  handleAuthorChange: function(e) {
+    this.setState({author: e.target.value});
+  },
+  handleTextChange: function(e) {
+    this.setState({text: e.target.value});
+  },
+  handleSubmit: function(e) {
+    e.preventDefault();
+    var author = this.state.author.trim();
+    var text = this.state.text.trim();
+    if (!text || !author) {
+      return;
+    }
+    this.props.onCommentSubmit({author: author, text: text});
+    this.setState({author: '', text: ''});
+  },
   render: function() {
     return (
-      <div className="commentForm">
-        I am CommentForm
-      </div>
+      <form className="commentForm" onSubmit={this.handleSubmit}>
+        <input
+          type="text"
+          placeholder="Your name"
+          value={this.state.author}
+          onChange={this.handleAuthorChange}
+        />
+        <textarea
+          placeholder="Say something..."
+          value={this.state.text}
+          onChange={this.handleTextChange}
+        />
+        <input type="submit" value="Post"/>
+      </form>
     )
   }
 });
