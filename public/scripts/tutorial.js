@@ -23,6 +23,8 @@ var CommentBox = React.createClass({
       .catch(this.handleError);
   },
   handleCommentSubmit: function(comment) {
+    comment.id = Date.now();
+    this.setState({data: this.state.data.concat([comment])});
     axios.post(this.props.url, comment)
       .then(this.handleSuccess)
       .catch(this.handleError);
