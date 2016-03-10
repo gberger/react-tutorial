@@ -5,11 +5,33 @@ var data = [
 
 
 var CommentBox = React.createClass({
+  loadCommentsFromServer: function() {
+    axios.get(this.props.url)
+      .then(function(response) {
+        this.setState({data: response.data});
+      }.bind(this))
+      .catch(function(response) {
+        if (response instanceof Error) {
+          // Something happened in setting up the request that triggered an Error
+          console.log('Error', response.message);
+        } else {
+          // The request was made, but the server didn't respond with 2xx
+          console.error(this.props.url, response);
+        }
+      }.bind(this))
+  },
+  getInitialState: function() {
+    return {data: []}
+  },
+  componentDidMount: function() {
+    this.loadCommentsFromServer();
+    setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+  },
   render: function() {
     return (
       <div className="commentBox">
         <h1>Comments</h1>
-        <CommentList data={this.props.data} />
+        <CommentList data={this.state.data} />
         <CommentForm />
       </div>
     )
@@ -60,4 +82,4 @@ var CommentForm = React.createClass({
   }
 });
 
-ReactDOM.render(<CommentBox data={data}/>, document.getElementById('content'));
+ReactDOM.render(<CommentBox url='/api/comments' pollInterval={2000} />, document.getElementById('content'));
